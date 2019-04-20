@@ -37,19 +37,21 @@
  */
 package org.jooq.mcve.test;
 
-import static org.jooq.mcve.Tables.TEST;
-import static org.junit.Assert.assertEquals;
+import org.jooq.DSLContext;
+import org.jooq.Record;
+import org.jooq.Result;
+import org.jooq.impl.DSL;
+import org.jooq.mcve.Keys;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 
-import org.jooq.DSLContext;
-import org.jooq.impl.DSL;
-import org.jooq.mcve.tables.records.TestRecord;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import static org.jooq.mcve.Tables.TEST1;
+import static org.jooq.mcve.Tables.TEST2;
+import static org.junit.Assert.assertEquals;
 
 public class MCVETest {
 
@@ -71,14 +73,18 @@ public class MCVETest {
 
     @Test
     public void mcveTest() {
-        TestRecord result =
-        ctx.insertInto(TEST)
-           .columns(TEST.VALUE)
-           .values(42)
-           .returning(TEST.ID)
-           .fetchOne();
+        ctx.insertInto(TEST1)
+                .columns(TEST1.ID1, TEST1.ID2)
+                .values(1, 2)
+                .execute();
 
-        result.refresh();
-        assertEquals(42, (int) result.getValue());
+        ctx.insertInto(TEST2)
+                .columns(TEST2.ID, TEST2.TEST1_ID1, TEST2.TEST1_ID2)
+                .values(1, 1, 2)
+                .execute();
+
+        Result<Record> result = ctx.selectFrom(TEST1.innerJoin(TEST2).onKey(Keys.FK_TEST2_TEST1))
+                .fetch();
+        assertEquals(1, result.size());
     }
 }
